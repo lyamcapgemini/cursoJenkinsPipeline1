@@ -2,7 +2,12 @@
 pipeline {
     // Integración continua
     agent any;
-    
+    // Parametros
+    parameters {
+        booleanParam description: 'Quiere hacer pruebas de HA?', name: 'PROBAR_HA'
+        choice choices: ['chrome', 'firefox'], description: 'Qué navegador usar para las pruebas de UI básicas', name: 'NAVEGADOR_PRUEBAS_BASICAS'
+    }
+
     stages {
         stage('1-Compilación') {
             steps {
@@ -54,7 +59,7 @@ pipeline {
                         echo 'Instalación de app'
                     }
                 }    
-                stage('2.3-Smoketest') {
+                stage('3.2-Smoketest') {
                     steps {
                         echo 'Probar si la app se ha instalado bien'
                     }
@@ -70,7 +75,7 @@ pipeline {
                 }    
                 stage('5.2-UI Básicas') {
                     steps {
-                        echo 'Pruebas selenium en chrome y en ultima versión... 30 minutos'
+                        echo "$params.PROBAR_HA - Pruebas selenium en $params.NAVEGADOR_PRUEBAS_BASICAS  y en ultima versión... 30 minutos"
                     }
                 }
             }
@@ -89,11 +94,17 @@ pipeline {
                     steps {
                         echo 'Probar alta disponibilidad'
                     }
+                    when {
+                        expression {
+                            return params.PROBAR_HA;
+                        }
+                    }
                 }    
                 stage('6.3-UI Completas') {
+                    /*
                     stages{
                         // Selenium-Grid
-                        stage('4.3.1-Chrome') {
+                        stage('6.3.1-Chrome') {
                             steps {
                                 echo 'Android telefono'
                                 echo 'Android tableta'
@@ -106,7 +117,7 @@ pipeline {
                                 echo 'Fedora'
                             }
                         }    
-                        stage('4.3.2-Firefox') {
+                        stage('6.3.2-Firefox') {
                             steps {
                                 echo 'Windows7'
                                 echo 'Windows8'
@@ -117,13 +128,13 @@ pipeline {
                                 echo 'Fedora'
                             }
                         }    
-                        stage('4.3.3-Safari') {
+                        stage('6.3.3-Safari') {
                             steps {
                                 echo 'MacOS'
                                 echo 'iOS'
                             }
                         }    
-                        stage('4.3.4-Edge') {
+                        stage('6.3.4-Edge') {
                             steps {
                                 echo 'Windows7'
                                 echo 'Windows8'
@@ -131,7 +142,7 @@ pipeline {
                                 echo 'Windows11'
                             }                       
                         }    
-                        stage('4.3.5-Opera') {
+                        stage('6.3.5-Opera') {
                             steps {
                                 echo 'Windows7'
                                 echo 'Windows8'
@@ -143,7 +154,63 @@ pipeline {
                             }                        
                         }    
                     }
+                    */
+                    matrix {
+                        axes {
+                            axis {
+                                name 'NAVEGADOR'
+                                values 'firefox','opera','chrome','edge','safari'
+                            }
+                            axis {
+                                name 'SO'
+                                values 'windows10','windows11','macOS','ubuntu'
+                            }
+                        }
+                        excludes{
+                            exclude {
+                                axis {
+                                    name 'NAVEGADOR'
+                                    values 'safari'
+                                }
+                                axis {
+                                    name 'SO'
+                                    values 'windows10','windows11','ubuntu'
+                                }                            
+                            }
+                            exclude {
+                                axis {
+                                    name 'NAVEGADOR'
+                                    values 'edge'
+                                }
+                                axis {
+                                    name 'SO'
+                                    values 'macOS','ubuntu'
+                                }                            
+                            }
+                        }
+                        stages{
+                            stage('Pruebas en navegador') {
+                                steps {
+                                    echo "Probar la app en el navegador ${NAVEGADOR} corriendo en ${SO}"
+                                }
+                            }
+                        }
+                    }
                 }    
+            }
+        }
+        // Aqui estamos en el limite de lo que es Entrega continua
+        stage('7-Guardo el artefacto') {
+            steps {
+                echo 'En un repo de artefactos: NEXUS, ARTIFACTORY, REGISTRY DE IMAGENES DE DOCKER'
+                sh 'echo HOLA !!!!'
+                
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'target/*.war', followSymlinks: false
+                sh '''
+                    pwd
+                    clear
+                    whoami
+                '''
             }
         }
     }
