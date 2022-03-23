@@ -11,7 +11,7 @@ pipeline {
                 echo 'Listo'
             }
             post {
-                succes{
+                success{
                      echo 'Se ejecuta solo si los steps han ido bien'
                 }
                 failure{
@@ -29,7 +29,7 @@ pipeline {
                 echo 'Listo'
             }
             post {
-                succes{
+                success{
                      echo 'Se ejecuta solo si los steps han ido bien'
                 }
                 failure{
@@ -44,7 +44,7 @@ pipeline {
     
     // Tanto la marca post, como las marcas de dentro son opcionales
     post {
-        succes{
+        success{
              echo 'Se ejecuta solo si los stages han ido bien'
         }
         failure{
